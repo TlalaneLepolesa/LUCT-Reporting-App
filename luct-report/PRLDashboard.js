@@ -99,7 +99,7 @@ export default function PRLDashboard() {
                 <Text style={styles.modalText}><Text style={styles.boldText}>Topic:</Text> {selectedReport?.topicTaught}</Text>
                 
                 {/* Realistic Attendance Stats */}
-                <Text style={[styles.modalText, { marginTop: 10, color: '#FF69B4', fontWeight: 'bold' }]}>
+                <Text style={[styles.modalText, { marginTop: 10, color: '#538cf7', fontWeight: 'bold' }]}>
                   Attendance: {selectedReport?.totalPresent || 0} / {selectedReport?.totalRegistered || 0} Present
                 </Text>
               </View>
@@ -119,7 +119,7 @@ export default function PRLDashboard() {
                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#333' }]} onPress={() => setSelectedReport(null)}>
                   <Text style={styles.btnText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#FF69B4' }]} onPress={submitReview}>
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#538cf7' }]} onPress={submitReview}>
                   <Text style={styles.btnText}>Submit Review</Text>
                 </TouchableOpacity>
               </View>
@@ -136,7 +136,7 @@ export default function PRLDashboard() {
 const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: '#121212' },
   container: { padding: 20, marginTop: 40 },
-  header: { fontSize: 26, color: '#FF69B4', fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  header: { fontSize: 26, color: '#538cf7', fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
   sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#333', paddingBottom: 5 },
   emptyText: { color: '#888', fontStyle: 'italic', marginBottom: 20 },
   
@@ -149,12 +149,12 @@ const styles = StyleSheet.create({
   
   reviewBtn: { backgroundColor: '#333', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#555' },
   feedbackBox: { marginTop: 12, padding: 10, backgroundColor: '#121212', borderRadius: 8 },
-  fbLabel: { color: '#FF69B4', fontSize: 11, fontWeight: 'bold', marginBottom: 5, marginTop: 5 },
+  fbLabel: { color: '#538cf7', fontSize: 11, fontWeight: 'bold', marginBottom: 5, marginTop: 5 },
   fbText: { color: '#ddd', fontSize: 14, fontStyle: 'italic' },
   
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#1e1e1e', width: '90%', padding: 20, borderRadius: 15, borderWidth: 1, borderColor: '#444' },
-  modalTitle: { color: '#FF69B4', fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
+  modalTitle: { color: '#538cf7', fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
   infoBox: { backgroundColor: '#121212', padding: 15, borderRadius: 8, marginBottom: 15 },
   modalText: { color: '#ddd', fontSize: 14, marginBottom: 6 },
   boldText: { fontWeight: 'bold', color: '#fff' },

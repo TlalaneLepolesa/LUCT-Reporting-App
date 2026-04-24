@@ -72,7 +72,7 @@ export default function PLDashboard() {
             lecturers.map(l => (
               <TouchableOpacity key={l.id} style={styles.lecBadge} onPress={() => setSelectedLec(l)}>
                 <Text style={{color: '#fff', fontWeight: 'bold'}}>{l.email?.split('@')[0]}</Text>
-                <Text style={{color: '#FF69B4', fontSize: 10, marginTop: 4}}>View Profile</Text>
+                <Text style={{color: '#538cf7', fontSize: 10, marginTop: 4}}>View Profile</Text>
               </TouchableOpacity>
             ))
           }
@@ -99,7 +99,7 @@ export default function PLDashboard() {
         {ratings.length === 0 ? <Text style={{color: '#888'}}>No ratings submitted yet.</Text> :
           ratings.map(rt => (
             <View key={rt.id} style={styles.miniCard}>
-              <Text style={{color: '#FF69B4', fontWeight: 'bold'}}>{rt.lecturerEmail?.split('@')[0]}</Text>
+              <Text style={{color: '#538cf7', fontWeight: 'bold'}}>{rt.lecturerEmail?.split('@')[0]}</Text>
               <Text style={{color: '#ddd'}}>Engagement Score: {rt.scores?.engagement || 0} / 5</Text>
               <Text style={{color: '#ddd'}}>Clarity Score: {rt.scores?.clarity || 0} / 5</Text>
             </View>
@@ -130,23 +130,23 @@ export default function PLDashboard() {
 const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: '#121212' },
   container: { padding: 20, marginTop: 40 },
-  header: { fontSize: 26, color: '#FF69B4', fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#FF69B4', paddingLeft: 10 },
+  header: { fontSize: 26, color: '#538cf7', fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#3639d4', paddingLeft: 10 },
   hintText: { color: '#888', fontSize: 12, marginBottom: 10, fontStyle: 'italic' },
   card: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#333' },
   input: { backgroundColor: '#121212', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#333' },
-  actionBtn: { backgroundColor: '#FF69B4', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 5 },
+  actionBtn: { backgroundColor: '#538cf7', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 5 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   lecBadge: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 12, marginRight: 12, minWidth: 120, alignItems: 'center', borderWidth: 1, borderColor: '#444' },
-  cardTitle: { color: '#FF69B4', fontWeight: 'bold', fontSize: 18, marginBottom: 5 },
+  cardTitle: { color: '#538cf7', fontWeight: 'bold', fontSize: 18, marginBottom: 5 },
   cardSub: { color: '#aaa', fontSize: 13, marginBottom: 3 },
-  feedbackBox: { marginTop: 12, padding: 10, backgroundColor: '#121212', borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#FF69B4' },
-  fbLabel: { color: '#FF69B4', fontSize: 11, fontWeight: 'bold', marginBottom: 4 },
+  feedbackBox: { marginTop: 12, padding: 10, backgroundColor: '#121212', borderRadius: 8, borderLeftWidth: 3, borderLeftColor: '#538cf7' },
+  fbLabel: { color: '#538cf7', fontSize: 11, fontWeight: 'bold', marginBottom: 4 },
   fbText: { color: '#ddd', fontSize: 13, fontStyle: 'italic' },
   miniCard: { backgroundColor: '#1e1e1e', padding: 12, borderRadius: 8, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#4CAF50' },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#1e1e1e', width: '85%', padding: 25, borderRadius: 15, borderWidth: 1, borderColor: '#333' },
-  modalTitle: { color: '#FF69B4', fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalTitle: { color: '#538cf7', fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   modalText: { color: '#ddd', fontSize: 16, marginBottom: 12 },
   closeBtn: { backgroundColor: '#333', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 20, borderWidth: 1, borderColor: '#555' }
 });

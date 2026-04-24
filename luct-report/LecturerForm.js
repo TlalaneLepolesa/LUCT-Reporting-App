@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Text, View, KeyboardAvoidingView, Platform, Alert, Switch, ActivityIndicator } from 'react-native';
-import { db, auth } from './firebaseConfig'; // Added auth here
+import { db, auth } from './firebaseConfig'; // Added auth 
 import { collection, addDoc, getDocs, query, where, onSnapshot } from "firebase/firestore"; 
 
 export default function LecturerForm() {
@@ -123,7 +123,7 @@ export default function LecturerForm() {
           <Text style={styles.sectionTitle}>Attendance Register</Text>
           <View style={styles.attendanceBox}>
             {loadingStudents ? (
-              <ActivityIndicator color="#FF69B4" />
+              <ActivityIndicator color="#538cf7" />
             ) : studentList.length === 0 ? (
               <Text style={{color: '#888'}}>No students found in the database.</Text>
             ) : (
@@ -135,7 +135,7 @@ export default function LecturerForm() {
                       {attendanceRecord[student.email] ? 'Present' : 'Absent'}
                     </Text>
                     <Switch
-                      trackColor={{ false: "#767577", true: "#FF69B4" }}
+                      trackColor={{ false: "#767577", true: "#538cf7" }}
                       thumbColor="#f4f3f4"
                       onValueChange={() => toggleAttendance(student.email)}
                       value={attendanceRecord[student.email]}
@@ -159,9 +159,9 @@ const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: '#121212' },
   scrollCenter: { flexGrow: 1, alignItems: 'center', paddingVertical: 20 },
   responsiveContainer: { width: '100%', maxWidth: 600, paddingHorizontal: 20 },
-  title: { fontSize: 24, color: '#FF69B4', marginBottom: 20, fontWeight: 'bold', textAlign: 'center' },
-  messageBox: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 8, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: '#FF69B4' },
-  messageTitle: { color: '#FF69B4', fontWeight: 'bold', marginBottom: 5 },
+  title: { fontSize: 24, color: '#538cf7', marginBottom: 20, fontWeight: 'bold', textAlign: 'center' },
+  messageBox: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 8, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: '#538cf7' },
+  messageTitle: { color: '#538cf7', fontWeight: 'bold', marginBottom: 5 },
   messageText: { color: '#ddd', fontSize: 13, fontStyle: 'italic', marginBottom: 5 },
   sectionTitle: { fontSize: 18, color: '#fff', marginTop: 20, marginBottom: 10, fontWeight: 'bold' },
   input: { backgroundColor: '#1e1e1e', color: '#fff', padding: 15, borderRadius: 8, fontSize: 16, marginBottom: 15, borderWidth: 1, borderColor: '#333' },
@@ -169,6 +169,6 @@ const styles = StyleSheet.create({
   studentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#333' },
   studentName: { color: '#ddd', fontSize: 16 },
   toggleGroup: { flexDirection: 'row', alignItems: 'center' },
-  submitBtn: { backgroundColor: '#FF69B4', padding: 15, borderRadius: 8, alignItems: 'center', marginBottom: 40 },
+  submitBtn: { backgroundColor: '#538cf7', padding: 15, borderRadius: 8, alignItems: 'center', marginBottom: 40 },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
 });

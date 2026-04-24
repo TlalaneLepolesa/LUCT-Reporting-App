@@ -48,7 +48,7 @@ export default function RegistrationScreen({ navigation }) {
         value={role} 
       />
 
-      <Button title="Register" onPress={handleRegister} color="#FF69B4" />
+      <Button title="Register" onPress={handleRegister} color="#007AFF" />
       
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
         <Text style={styles.linkText}>Back to Login</Text>
@@ -58,9 +58,53 @@ export default function RegistrationScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#121212' },
-  header: { fontSize: 24, color: '#FF69B4', textAlign: 'center', marginBottom: 20 },
-  input: { backgroundColor: '#fff', marginBottom: 15, padding: 15, borderRadius: 8 },
-  label: { color: '#fff', marginBottom: 5 },
-  linkText: { color: '#FF69B4', marginTop: 20, textAlign: 'center' }
+  container: { 
+    flexGrow: 1, 
+    justifyContent: 'center', 
+    padding: 25, 
+    backgroundColor: '#121212' // Deep professional dark
+  },
+  header: { 
+    fontSize: 28, 
+    fontWeight: '700', 
+    color: '#FFFFFF', // Clean White
+    textAlign: 'center', 
+    marginBottom: 30,
+    letterSpacing: 1
+  },
+  label: { 
+    color: '#B0B0B0', // Muted Grey for labels
+    marginBottom: 8, 
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase'
+  },
+  input: { 
+    backgroundColor: '#1E1E1E', // Slightly lighter than background
+    color: '#FFFFFF',
+    marginBottom: 20, 
+    padding: 15, 
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#333333' // Subtle border
+  },
+  pickerContainer: { 
+    backgroundColor: '#1E1E1E', 
+    borderRadius: 5, 
+    marginBottom: 20, 
+    borderWidth: 1,
+    borderColor: '#333333',
+    overflow: 'hidden'
+  },
+  buttonContainer: {
+    marginTop: 10,
+    borderRadius: 5,
+    overflow: 'hidden'
+  },
+  linkText: { 
+    color: '#007AFF', // Standard Professional Blue
+    marginTop: 25, 
+    textAlign: 'center',
+    fontWeight: '500'
+  }
 });
