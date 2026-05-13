@@ -1,166 +1,251 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal } from 'react-native';
-import { db } from './firebaseConfig';
-import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { 
+  View, Text, StyleSheet, ScrollView, TextInput, 
+  TouchableOpacity, Alert, Modal, SafeAreaView, ActivityIndicator 
+} from 'react-native';
+import { db, auth } from './firebaseConfig';
+import { collection, onSnapshot, doc, updateDoc, serverTimestamp, query, where, addDoc } from "firebase/firestore";
+import { signOut } from 'firebase/auth';
 
-export default function PRLDashboard() {
+export default function PRLDashboard({ navigation }) {
   const [reports, setReports] = useState([]);
+  const [lecturers, setLecturers] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [ratings, setRatings] = useState([]);
+  
   const [selectedReport, setSelectedReport] = useState(null);
   const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Listen for all submitted lecture reports in real-time
-    const unsub = onSnapshot(collection(db, "reports"), (snap) => {
-      const fetchedReports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Sort the newest reports are at the top
-      fetchedReports.sort((a, b) => b.timestamp - a.timestamp);
-      setReports(fetchedReports);
+    const unsubReports = onSnapshot(collection(db, "reports"), snap => {
+      setReports(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
-    return () => unsub();
+
+    const unsubLecturers = onSnapshot(query(collection(db, "users"), where("role", "==", "Lecturer")), snap => {
+      setLecturers(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    const unsubCourses = onSnapshot(collection(db, "courses"), snap => {
+      setCourses(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    const unsubRatings = onSnapshot(collection(db, "ratings"), snap => {
+      setRatings(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    return () => { unsubReports(); unsubLecturers(); unsubCourses(); unsubRatings(); };
   }, []);
 
-  // Function to submit the official PRL feedback
-  const submitReview = async () => {
-    if (!feedbackText.trim()) {
-      return Alert.alert("Required", "Please enter your feedback before submitting.");
-    }
-    
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigation.replace('Auth');
+    } catch (e) { Alert.alert("Error", "Logout failed."); }
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackText.trim()) return Alert.alert("Required", "Please enter feedback.");
+    setIsSubmitting(true);
     try {
       const reportRef = doc(db, "reports", selectedReport.id);
       await updateDoc(reportRef, {
         prlFeedback: feedbackText,
-        reviewedByPRL: true
+        reviewedByPRL: true,
+        verifiedAt: serverTimestamp()
       });
-      
-      Alert.alert("Success", "Feedback submitted to Lecturer.");
-      setSelectedReport(null); // Close the modal
-      setFeedbackText(''); // Clear the text input
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    }
+
+      await addDoc(collection(db, "notifications"), {
+        lecturerEmail: selectedReport.lecturerEmail,
+        title: "Report Verified",
+        message: `Your report for ${selectedReport.courseName} has been verified with feedback.`,
+        read: false,
+        timestamp: serverTimestamp()
+      });
+
+      Alert.alert("Success", "Feedback submitted.");
+      setFeedbackText('');
+      setSelectedReport(null);
+    } catch (e) { Alert.alert("Error", e.message); }
+    setIsSubmitting(false);
   };
 
-  // Split reports into two categories for a realistic workflow
-  const pendingReports = reports.filter(r => !r.reviewedByPRL);
-  const reviewedReports = reports.filter(r => r.reviewedByPRL);
-
   return (
-    <ScrollView style={styles.background} contentContainerStyle={{paddingBottom: 50}}>
-      <View style={styles.container}>
-        <Text style={styles.header}>PRL Review Portal</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.welcomeText}>Principal Oversight</Text>
+          <Text style={styles.subHeaderText}>Stream Quality Assurance</Text>
+        </View>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
+          <Text style={styles.logoutBtnText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* SECTION 1: Action Required (Pending) */}
-        <Text style={styles.sectionTitle}>Action Required: Pending Reviews</Text>
-        {pendingReports.length === 0 ? <Text style={styles.emptyText}>No pending reports.</Text> :
-          pendingReports.map(r => (
-            <View key={r.id} style={[styles.card, { borderLeftColor: '#FFC107' }]}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{r.courseName || "Unnamed Course"}</Text>
-                <Text style={styles.statusBadgePending}>Pending</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        
+        {/* SECTION 1: PENDING REPORTS */}
+        <Text style={styles.groupLabel}>Action Required: Reports</Text>
+        {reports.filter(r => !r.reviewedByPRL).length === 0 ? (
+          <View style={styles.emptyCard}><Text style={styles.emptyText}>All current reports verified.</Text></View>
+        ) : (
+          reports.filter(r => !r.reviewedByPRL).map(r => (
+            <TouchableOpacity key={r.id} style={styles.reportCard} onPress={() => setSelectedReport(r)}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.reportTitle}>{r.courseName}</Text>
+                <View style={[styles.statusTag, { backgroundColor: '#ca8a04' }]}>
+                  <Text style={styles.statusText}>Pending Review</Text>
+                </View>
               </View>
-              <Text style={styles.cardSub}>Lecturer: {r.lecturerEmail}</Text>
-              <Text style={styles.cardSub}>Date: {r.dateOfLecture || "N/A"}</Text>
-              <TouchableOpacity style={styles.reviewBtn} onPress={() => { setSelectedReport(r); setFeedbackText(''); }}>
-                <Text style={styles.btnText}>Review Report</Text>
-              </TouchableOpacity>
+              <Text style={styles.reportSub}>Lecturer: {r.lecturerEmail}</Text>
+              <Text style={styles.clickHint}>Tap to view & add feedback</Text>
+            </TouchableOpacity>
+          ))
+        )}
+
+        {/* SECTION 2: ENHANCED STREAM MONITORING (DETAILED LIST) */}
+        <Text style={styles.groupLabel}>Detailed Stream Monitoring</Text>
+        {lecturers.map((lec) => (
+          <View key={lec.id} style={styles.monitorCard}>
+            <View style={styles.monitorHeader}>
+              <View style={styles.lecInfo}>
+                <Text style={styles.lecNameText}>{lec.fullName || "Lecturer Name"}</Text>
+                <Text style={styles.lecEmailText}>{lec.email}</Text>
+              </View>
+              <View style={styles.lecBadge}>
+                <Text style={styles.lecBadgeText}>{lec.staffID || "ID: N/A"}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.moduleList}>
+              <Text style={styles.moduleListTitle}>Assigned Modules:</Text>
+              {courses.filter(c => c.lec?.toLowerCase() === lec.email?.toLowerCase()).length === 0 ? (
+                <Text style={styles.emptyModuleText}>No modules currently assigned.</Text>
+              ) : (
+                courses.filter(c => c.lec?.toLowerCase() === lec.email?.toLowerCase()).map((course, idx) => (
+                  <View key={idx} style={styles.moduleItem}>
+                    <Text style={styles.moduleNameText}>{course.name}</Text>
+                    <Text style={styles.moduleCodeText}>{course.code || "No Code"}</Text>
+                  </View>
+                ))
+              )}
+            </View>
+          </View>
+        ))}
+
+        {/* SECTION 3: STUDENT RATINGS */}
+        <Text style={styles.groupLabel}>Recent Student Ratings</Text>
+        {ratings.length === 0 ? (
+          <View style={styles.emptyCard}><Text style={styles.emptyText}>No ratings recorded.</Text></View>
+        ) : (
+          ratings.map((rating, index) => (
+            <View key={index} style={styles.ratingCard}>
+              <View style={styles.rowBetween}>
+                <Text style={styles.ratingLec}>{rating.lecturerEmail?.split('@')[0]}</Text>
+                <Text style={styles.ratingScore}>{rating.score}/5</Text>
+              </View>
+              <Text style={styles.ratingComment}>"{rating.comment}"</Text>
+              <Text style={styles.ratingCourse}>{rating.courseName}</Text>
             </View>
           ))
-        }
+        )}
+      </ScrollView>
 
-        {/* SECTION 2: Completed Reviews */}
-        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Completed Reviews</Text>
-        {reviewedReports.length === 0 ? <Text style={styles.emptyText}>No reviewed reports yet.</Text> :
-          reviewedReports.map(r => (
-            <View key={r.id} style={[styles.card, { borderLeftColor: '#4CAF50' }]}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{r.courseName}</Text>
-                <Text style={styles.statusBadgeDone}>Reviewed</Text>
-              </View>
-              <Text style={styles.cardSub}>Lecturer: {r.lecturerEmail}</Text>
-              <Text style={styles.cardSub}>Topic: {r.topicTaught}</Text>
-              <View style={styles.feedbackBox}>
-                <Text style={styles.fbLabel}>YOUR FEEDBACK:</Text>
-                <Text style={styles.fbText}>"{r.prlFeedback}"</Text>
-              </View>
-            </View>
-          ))
-        }
-
-        {/* REVIEW MODAL: The actual workspace for the PRL to leave comments */}
-        <Modal visible={!!selectedReport} transparent animationType="slide">
-          <View style={styles.modalBackground}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Official Report Review</Text>
-              
-              <View style={styles.infoBox}>
-                <Text style={styles.modalText}><Text style={styles.boldText}>Course:</Text> {selectedReport?.courseName}</Text>
-                <Text style={styles.modalText}><Text style={styles.boldText}>Lecturer:</Text> {selectedReport?.lecturerEmail}</Text>
-                <Text style={styles.modalText}><Text style={styles.boldText}>Date:</Text> {selectedReport?.dateOfLecture}</Text>
-                <Text style={styles.modalText}><Text style={styles.boldText}>Topic:</Text> {selectedReport?.topicTaught}</Text>
-                
-                {/* Realistic Attendance Stats */}
-                <Text style={[styles.modalText, { marginTop: 10, color: '#538cf7', fontWeight: 'bold' }]}>
-                  Attendance: {selectedReport?.totalPresent || 0} / {selectedReport?.totalRegistered || 0} Present
-                </Text>
+      {/* MODAL FOR FEEDBACK */}
+      <Modal visible={!!selectedReport} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Report Review</Text>
+              <View style={styles.detailBox}>
+                <Text style={styles.detailLabel}>Module:</Text>
+                <Text style={styles.detailValue}>{selectedReport?.courseName}</Text>
+                <Text style={styles.detailLabel}>Lecturer:</Text>
+                <Text style={styles.detailValue}>{selectedReport?.lecturerEmail}</Text>
+                <Text style={styles.detailLabel}>Topic Taught:</Text>
+                <Text style={styles.detailValue}>{selectedReport?.topicTaught || "N/A"}</Text>
               </View>
 
-              <Text style={styles.fbLabel}>ENTER PRL FEEDBACK:</Text>
+              <Text style={styles.inputLabel}>Quality Feedback</Text>
               <TextInput 
-                style={styles.textArea} 
-                multiline={true} 
-                numberOfLines={4}
-                placeholder="Type your official feedback to the lecturer here..."
-                placeholderTextColor="#666"
+                style={styles.textArea}
+                placeholder="Enter feedback for the lecturer..."
+                placeholderTextColor="#64748b"
+                multiline
                 value={feedbackText}
                 onChangeText={setFeedbackText}
               />
 
-              <View style={styles.modalActions}>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#333' }]} onPress={() => setSelectedReport(null)}>
-                  <Text style={styles.btnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#538cf7' }]} onPress={submitReview}>
-                  <Text style={styles.btnText}>Submit Review</Text>
-                </TouchableOpacity>
-              </View>
-
-            </View>
+              <TouchableOpacity style={styles.verifyBtn} onPress={submitFeedback}>
+                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Verify & Send Feedback</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedReport(null)}>
+                <Text style={styles.closeBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        </Modal>
-
-      </View>
-    </ScrollView>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: { flex: 1, backgroundColor: '#121212' },
-  container: { padding: 20, marginTop: 40 },
-  header: { fontSize: 26, color: '#538cf7', fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#333', paddingBottom: 5 },
-  emptyText: { color: '#888', fontStyle: 'italic', marginBottom: 20 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 25, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  welcomeText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  subHeaderText: { color: '#94a3b8', fontSize: 13 },
+  logoutBtn: { backgroundColor: '#ef444422', padding: 8, borderRadius: 8 },
+  logoutBtnText: { color: '#ef4444', fontWeight: 'bold', fontSize: 12 },
+  scrollContent: { padding: 20 },
+  groupLabel: { color: '#3b82f6', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 15, marginTop: 15 },
   
-  card: { backgroundColor: '#1e1e1e', padding: 15, borderRadius: 12, marginBottom: 15, borderLeftWidth: 4 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTitle: { color: '#fff', fontWeight: 'bold', fontSize: 18, flex: 1 },
-  statusBadgePending: { backgroundColor: '#FFC10722', color: '#FFC107', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 10, fontWeight: 'bold', overflow: 'hidden' },
-  statusBadgeDone: { backgroundColor: '#4CAF5022', color: '#4CAF50', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 10, fontWeight: 'bold', overflow: 'hidden' },
-  cardSub: { color: '#aaa', fontSize: 13, marginBottom: 4 },
+  // Monitoring Card
+  monitorCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: '#334155' },
+  monitorHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', borderBottomWidth: 1, borderBottomColor: '#334155', paddingBottom: 12 },
+  lecInfo: { flex: 1 },
+  lecNameText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  lecEmailText: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
+  lecBadge: { backgroundColor: '#3b82f622', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  lecBadgeText: { color: '#3b82f6', fontSize: 10, fontWeight: 'bold' },
   
-  reviewBtn: { backgroundColor: '#333', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#555' },
-  feedbackBox: { marginTop: 12, padding: 10, backgroundColor: '#121212', borderRadius: 8 },
-  fbLabel: { color: '#538cf7', fontSize: 11, fontWeight: 'bold', marginBottom: 5, marginTop: 5 },
-  fbText: { color: '#ddd', fontSize: 14, fontStyle: 'italic' },
+  // Module List inside Monitoring
+  moduleList: { marginTop: 12 },
+  moduleListTitle: { color: '#3b82f6', fontSize: 10, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8 },
+  moduleItem: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#0f172a', padding: 10, borderRadius: 8, marginBottom: 6 },
+  moduleNameText: { color: '#f8fafc', fontSize: 13, flex: 1 },
+  moduleCodeText: { color: '#64748b', fontSize: 11, fontWeight: 'bold' },
+  emptyModuleText: { color: '#64748b', fontSize: 12, fontStyle: 'italic' },
+
+  // Report Cards
+  reportCard: { backgroundColor: '#1e293b', padding: 20, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#334155' },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reportTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  reportSub: { color: '#94a3b8', fontSize: 13, marginTop: 5 },
+  statusTag: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  clickHint: { color: '#3b82f6', fontSize: 11, marginTop: 12, fontWeight: '600' },
   
-  modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#1e1e1e', width: '90%', padding: 20, borderRadius: 15, borderWidth: 1, borderColor: '#444' },
-  modalTitle: { color: '#538cf7', fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  infoBox: { backgroundColor: '#121212', padding: 15, borderRadius: 8, marginBottom: 15 },
-  modalText: { color: '#ddd', fontSize: 14, marginBottom: 6 },
-  boldText: { fontWeight: 'bold', color: '#fff' },
-  textArea: { backgroundColor: '#121212', color: '#fff', padding: 15, borderRadius: 8, minHeight: 100, textAlignVertical: 'top', borderWidth: 1, borderColor: '#333', marginBottom: 20 },
-  
-  modalActions: { flexDirection: 'row', justifyContent: 'space-between' },
-  actionBtn: { flex: 1, padding: 15, borderRadius: 8, alignItems: 'center', marginHorizontal: 5 },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
+  // Ratings
+  ratingCard: { backgroundColor: '#0f172a', padding: 15, borderRadius: 12, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#fbbf24' },
+  ratingLec: { color: '#fff', fontWeight: 'bold' },
+  ratingScore: { color: '#fbbf24', fontWeight: 'bold' },
+  ratingComment: { color: '#cbd5e1', fontSize: 13, fontStyle: 'italic', marginVertical: 8 },
+  ratingCourse: { color: '#64748b', fontSize: 11 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#1e293b', width: '90%', maxHeight: '80%', padding: 25, borderRadius: 24, borderWidth: 1, borderColor: '#334155' },
+  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  detailBox: { backgroundColor: '#0f172a', padding: 15, borderRadius: 12, marginBottom: 20 },
+  detailLabel: { color: '#3b82f6', fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  detailValue: { color: '#fff', fontSize: 14, marginBottom: 12, marginTop: 2 },
+  inputLabel: { color: '#94a3b8', fontSize: 12, marginBottom: 8, fontWeight: 'bold' },
+  textArea: { backgroundColor: '#0f172a', color: '#fff', padding: 15, borderRadius: 12, height: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: '#334155' },
+  verifyBtn: { backgroundColor: '#3b82f6', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+  btnText: { color: '#fff', fontWeight: 'bold' },
+  closeBtn: { padding: 15, alignItems: 'center' },
+  closeBtnText: { color: '#94a3b8' },
+  emptyCard: { padding: 30, alignItems: 'center' },
+  emptyText: { color: '#64748b', fontSize: 13 }
 });
